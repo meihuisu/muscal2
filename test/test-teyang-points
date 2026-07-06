@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+SECONDS=0
+out=$( { time ucvm_query -m muscal -f $UCVM_INSTALL_PATH/conf/ucvm.conf < MUSCAL_test_points_deep.txt > MUSCAL_test_points_deep.final ; } 2>&1 )
+echo "$out" >> MUSCAL_test_points_deep.final
+echo "Elapsed: ${SECONDS}s" >> MUSCAL_test_points_deep.final
+
+
+SECONDS=0
+out=$( { time ucvm_query -m muscal -f $UCVM_INSTALL_PATH/conf/ucvm.conf < MUSCAL_test_points_shallow.txt > MUSCAL_test_points_shallow.final ; } 2>&1 )
+echo "$out" >> MUSCAL_test_points_shallow.final
+echo "Elapsed: ${SECONDS}s" >> MUSCAL_test_points_shallow.final
+

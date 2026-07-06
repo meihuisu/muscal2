@@ -1,0 +1,84 @@
+# UTM Zone
+utm_zone=11
+
+# Model directory
+model_dir = muscal2 
+model_data_path = https://g-3a9041.a78b8.36fe.data.globus.org/ucvm/models
+
+/** 
+    different types of datasets
+       binary: NA 
+          -> binary
+              config ..nx/ny/nz
+       nc: ncid,
+          -> file 
+          -> binary
+              realtime ..nx/ny/nz
+       tiledb: tildb_ctx
+          -file
+              config ..nx/ny/nz
+**/
+// lon, NA or a value
+nx = 1301 
+// lat, NA or a value
+ny = 1251
+// depth, NA or a value
+nz = 210
+
+depth = NA
+// fixed step, NA or a value
+depth_interval = NA
+
+// irregular steps, NA or an array of floats
+depth_list = NA
+// irregular steps, NA or an array of floats
+latitude_list = NA
+// irregular steps, NA or an array of floats
+longitude_list = NA
+
+# set this if netcdf data is too big to load in memory, use nc_FUNCTIONS to access
+too_big = off
+
+# interpolation only works when using in-memory data access (too_big == off)
+interpolation = on 
+
+# set to 'binary' want to use vp.dat/vs.dat/rho.dat in memory
+# set to 'tiledb' want to use tiledb's array
+data_type = binary
+
+## enable muscal1d with local vs tapering
+#default should be off.. used when making cybershake mesh
+enable_1d = off 
+
+###
+#longitdue:1301 from -126 to -113 
+#latitude:1251  from 31 to 43.5
+#DEPTh:210      from 0 to 99,000 
+#                   50 increments upto 3000 
+#                   100 increments upto 5000
+#                   250 increments upto 10000
+#                   500 increments upto 30000
+#                   1000 increments upto 99000
+data_file = { "LABEL" : "final", "FILE" : "model_MUSCAL_CANVAS_dll0.01_vardz_float32_cmpd.nc", "SURFACE": "surface_945765.in", "SURFACE_COUNT": 945765 }
+#data_file = { "LABEL" : "final", "FILE" : "model_MUSCAL2_CANVAS_dll0.01_vardz_float32_cmpd.tiledb", "SURFACE": "surface_945765.in", "SURFACE_COUNT": 945765 }
+ 
+###
+#longitdue:1301 from -126 to -113 
+#latitude:1251  from 31 to 43.5
+#DEPTh:210      from 0 to 99,000 
+#                   50 increments upto 3000 
+#                   100 increments upto 5000
+#                   250 increments upto 10000
+#                   500 increments upto 30000
+#                   1000 increments upto 99000
+#data_file = { "LABEL" : "small", "FILE" : "model_MUSCAL_CANVAS_dll0.01_vardz_cmpd.nc" }
+
+###
+#longitdue:1301 from -126 to -113 
+#latitude:1251  from 31 to 43.5
+#depth:671      from 0 to 100,000 
+#                   50 increments until 30,000
+#                   1000 increments til 100000
+#data_file = { "LABEL" : "old", "FILE" : "model_MSCAL_CANVAS_dll0.01_dz50_cmpd.nc" }
+
+
