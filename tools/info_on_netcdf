@@ -1,0 +1,27 @@
+dimensions:
+	depth = 210 ;
+	latitude = 1251 ;
+	longitude = 1301 ;
+variables:
+	float vp(depth, latitude, longitude) ;
+		vp:_FillValue = NaNf ;
+		vp:units = "m/s" ;
+	float vs(depth, latitude, longitude) ;
+		vs:_FillValue = NaNf ;
+		vs:units = "m/s" ;
+	float rho(depth, latitude, longitude) ;
+		rho:_FillValue = NaNf ;
+		rho:units = "kg/m^3" ;
+	float longitude(longitude) ;
+		longitude:_FillValue = NaNf ;
+		longitude:units = "degrees_east" ;
+	float latitude(latitude) ;
+		latitude:_FillValue = NaNf ;
+		latitude:units = "degrees_north" ;
+	float depth(depth) ;
+		depth:_FillValue = NaNf ;
+		depth:units = "meters" ;
+
+// global attributes:
+		:_NCProperties = "version=2,netcdf=4.9.2,hdf5=1.14.3" ;
+
