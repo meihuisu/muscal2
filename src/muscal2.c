@@ -199,9 +199,7 @@ if(muscal2_ucvm_debug){ fprintf(stderrfp,"\ncalling muscal2_query with %d numpoi
 // if too_big, then collect up all the index list and make just one call and
 // retrieve and disperse the result back into data
 
-    if(!muscal2_configuration->too_big) { 
-
-if(muscal2_ucvm_debug){ fprintf(stderrfp,">> Using In-Memory access \n"); }
+    if(!iXXX->too_big) { 
 
         // should be in the in-memory 
         for(int i=0; i<numpoints; i++) {
@@ -222,75 +220,7 @@ if(muscal2_ucvm_debug){ fprintf(stderrfp,">> calling get_one_nuscal1d_property\n
             }
         }
 
-    } else { 
-
-//
-// WARNING : no interpolation is done, for MUSCAL2, THIS SHOULD NOT BE USED 
-// EXCEPT FOR TESTING
-//
-// It is too big, extract data from external data file 
-// group netcdf access to 
-//   column based(same lat idx an same lon idx),
-//   or
-//   layer based(same depth idx) 
-//   or random method
-
-// if same_lon_idx and same_lat_idx,
-// it is depth profile
-//    extract the whole column with dataset->nz for different set 
-//    and then extract data from buffer one at a time using dep_idx 
-        if(same_lon_idx && same_lat_idx ) {
-          // grab a col from cache
-            muscal2_cache_col_t *col=find_a_cache_col(dataset, first_lat_idx, first_lon_idx); 
-if(muscal2_ucvm_debug){ fprintf(stderrfp,">> Using External data/Col cache - col idx=%d\n", dataset->col_cache_cnt); }
-          
-            tmp_vp_buffer=col->col_vp_buffer;
-            tmp_vs_buffer=col->col_vs_buffer;
-            tmp_rho_buffer=col->col_rho_buffer;
-
-            for(int i=0; i<numpoints; i++) { 
-                offset=pt_info[i].dep_idx;
-                data[i].vp = tmp_vp_buffer[offset];
-                data[i].vs = tmp_vs_buffer[offset];
-                data[i].rho =tmp_rho_buffer[offset];
-            }
-
-// if just same_dep_idx, it is a horizontal slice,
-// extract the whole layer using dataset->nx and dataset->ny
-// and then extract data from buffer using lon_idx, and lat_idx
-        } else if (same_dep_idx) { 
-          // grab a layer from cache or try to load it from external data file
-            muscal2_cache_layer_t *layer=find_a_cache_layer(dataset, first_dep_idx);
-
-if(muscal2_ucvm_debug){ fprintf(stderrfp,">> Using External data/Layer cache - current count=%d\n", dataset->layer_cache_cnt); }
-            tmp_vp_buffer=layer->layer_vp_buffer;
-            tmp_vs_buffer=layer->layer_vs_buffer;
-            tmp_rho_buffer=layer->layer_rho_buffer;
-
-            for(int i=0; i<numpoints; i++) { 
-                lat_idx=pt_info[i].lat_idx;
-                lon_idx=pt_info[i].lon_idx;
-                offset= (lat_idx * nx) + lon_idx;
-
-                data[i].vp = tmp_vp_buffer[offset];
-                data[i].vs = tmp_vs_buffer[offset];
-                data[i].rho =tmp_rho_buffer[offset];
-            }
-        } else {  
-// a very special case, it is random target ie. a vertical slice 
-// handle it as random and so just default to per location access
-if(muscal2_ucvm_debug){ fprintf(stderrfp,">> Using External data/Random call \n"); }
-            for(int i=0; i<numpoints; i++) { 
-                lon_idx=pt_info[i].lon_idx;
-                lat_idx=pt_info[i].lat_idx;
-                dep_idx=pt_info[i].dep_idx;
-                data[i].vp=get_nc_vara_float(dataset->ncid, dataset->vp_varid, dep_idx, lat_idx, lon_idx);
-                data[i].vs=get_nc_vara_float(dataset->ncid, dataset->vs_varid, dep_idx, lat_idx, lon_idx);
-                data[i].rho=get_nc_vara_float(dataset->ncid, dataset->rho_varid, dep_idx, lat_idx, lon_idx);
-            }
-         }
-    }
-
+    } 
     return SUCCESS;
 }
 
@@ -436,19 +366,10 @@ if(muscal2_ucvm_debug){ fprintf(stderrfp, "enabled Interpolation\n"); }
             }
 
             if (strcmp(key, "data_type") == 0) { 
-                if (strcmp(value,"binary") == 0) { 
-                   config->use_binary=1;
-                   config->use_tiledb=0;
-if(muscal2_ucvm_debug){ fprintf(stderrfp, "enabled Binary data\n"); }
-                   } else {
+                if (strcmp(value,"tiledb") == 0) { 
                    config->use_tiledb=1;
-                   config->use_binary=0;
-                }
-            }
-            if (strcmp(key, "too_big") == 0) { 
-                config->too_big=0;
-                if (strcmp(value,"on") == 0) { config->too_big=1;
-if(muscal2_ucvm_debug){ fprintf(stderrfp, "enabled tooBig -- use external data access\n"); }
+                   } else {
+                       fprintf(stderr, "BAD: config data_type bad seeting\n");
                 }
             }
             if (strcmp(key, "enable_1d") == 0) { 
@@ -568,7 +489,7 @@ int muscal2_read_model(muscal2_configuration_t *config, muscal2_model_t *model, 
 
     int max_idx=model->dataset_cnt; // how many datasets are there
     for(int i=0; i<max_idx;i++) { 
-        muscal2_dataset_t *data=make_a_muscal2_dataset(datadir, config->dataset_files[i], config->too_big, config->use_binary); 
+        muscal2_dataset_t *data=make_a_muscal2_dataset(config,datadir, config->dataset_files[i]); 
         /* read in the surface data if enabled */
         if(config->enable_1d) {
            char filepath[256];

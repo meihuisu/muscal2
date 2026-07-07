@@ -1,0 +1,7 @@
+
+
+rm -rf convert_nc_to_tiledb muscal_tiledb_array
+
+gcc10-gcc -g -I${UCVM_INSTALL_PATH}/lib/netcdf/include -I/home/mei/muscal-git/TileDB/opt/tiledb/include convert_nc_to_tiledb.c -o convert_nc_to_tiledb -L${UCVM_INSTALL_PATH}/lib/netcdf/lib -lnetcdf -L/home/mei/muscal-git/TileDB/opt/tiledb/lib64 -ltiledb -Wl,-rpath,/home/mei/muscal-git/TileDB/opt/tiledb/lib64
+
+./convert_nc_to_tiledb

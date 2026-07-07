@@ -52,83 +52,56 @@ void add_surface_data(muscal2_dataset_t  *data, char  *filepath, int sz) {
 }
 
 /**** for muscal2_dataset_t ****/
-muscal2_dataset_t *make_a_muscal2_dataset(char *datadir, char *datafile, int tooBig, int useBinary) {
+muscal2_dataset_t *make_a_muscal2_dataset(muscal2_configuration_t *config, char *datadir, char *datafile) {
     char filepath[256];
     size_t nelems= 0;
     nc_type vtype;
 
-    muscal2_dataset_t *data=(muscal2_dataset_t *)malloc(sizeof(muscal2_dataset_t));
+    muscal2_dataset_t *dataset=(muscal2_dataset_t *)malloc(sizeof(muscal2_dataset_t));
 
     sprintf(filepath, "%s/%s", datadir, datafile);
     if(muscal2_ucvm_debug) fprintf(stderrfp," data file ..%s\n", filepath);
 
-// XXX this is for nc
+/* setup ctx */
+    int rc=tiledb_ctx_alloc(NULL, dataset->tiledb_ctx);
+    int sz=strlen(datadir)+strlen(datafile)+2;
+     
+    dataset->tiledb_array_uri= (char  *) malloc(sizeof(char) * sz);
+    strcpy(dataset->tiledb_array_uri,"%s/%s",datadir,datafile);
 
-/* setup ncid */
-    data->ncid=open_nc(filepath);
-  
+    int nx=config->nx;
+    int ny=config->ny;
+    int nz=config->nz;
+
 /* setup nx/ny/nz and void ptrs */
-    data->longitudes=(float *) get_nc_float_buffer(data->ncid, "longitude", filepath, &vtype, &nelems, 1);
-    data->nx=nelems;
+    data->longitudes=(float *) malloc(nx * sizeof(float));
+XXX
     if(muscal2_ucvm_debug_detail) {
-        fprintf(stderrfp, "  Longitudes: %d\n", nelems);
-        for(int i=0;i<nelems; i++) {
+        fprintf(stderrfp, "  Longitudes: %d\n", nx);
+        for(int i=0;i<nx; i++) {
             fprintf(stderrfp, "%d  %f\n", i, data->longitudes[i]);
        	}
     }
 
-    data->latitudes=(float *) get_nc_float_buffer(data->ncid, "latitude", filepath, &vtype, &nelems, 1);
-    data->ny=nelems;
+    data->latitudes=(float *) malloc(ny * sizeof(float));
+XXX
     if(muscal2_ucvm_debug_detail) {
-        fprintf(stderrfp, "  Latitude: %d\n", nelems);
-        for(int i=0;i<nelems; i++) {
+        fprintf(stderrfp, "  Latitude: %d\n", ny);
+        for(int i=0;i<ny; i++) {
             fprintf(stderrfp, "%d  %f\n", i, data->latitudes[i]);
        	}
     }
 
-    data->depths=(float *) get_nc_float_buffer(data->ncid, "depth", filepath, &vtype, &nelems, 1);
-    data->nz=nelems;
+    data->depths=(float *) malloc (nz * sizeof(float));
+XXX
     if(muscal2_ucvm_debug_detail) {
-        fprintf(stderrfp, "  Depths: %d\n", nelems);
-        for(int i=0;i<nelems; i++) {
+        fprintf(stderrfp, "  Depths: %d\n", nz);
+        for(int i=0;i<nz; i++) {
             fprintf(stderrfp, "%d  %f\n", i, data->depths[i]);
        	}
     }
 
-/* Get variable ID by name */
-    data->vp_varid=get_nc_varid(data->ncid,"vp",filepath);
-    data->vs_varid=get_nc_varid(data->ncid,"vs",filepath);
-    data->rho_varid=get_nc_varid(data->ncid,"rho",filepath);
-
-    data->layer_cache_cnt=0;
-    data->col_cache_cnt=0;
-    data->in_memory =0;
     data->kdsurface=NULL;
-
-    if(!tooBig) {
-/* load all vp/vs/rho data in memory */
-        int total= data->nx * data->ny * data->nz;
-
-	if(!useBinary) {
-            if(muscal2_ucvm_debug) { fprintf(stderrfp, " import USING netcdf data files\n"); }
-            data->vp_buffer=get_nc_float_buffer(data->ncid, "vp", filepath, &vtype, &nelems, 3);
-            data->vs_buffer=get_nc_float_buffer(data->ncid, "vs", filepath, &vtype, &nelems, 3);
-            data->rho_buffer=get_nc_float_buffer(data->ncid, "rho", filepath, &vtype, &nelems, 3);
-	    } else {
-                if(muscal2_ucvm_debug) { fprintf(stderrfp, " import USING binary data files\n"); }
-                data->vp_buffer = get_binary_float_buffer(datadir, "vp.dat", total);
-                data->vs_buffer = get_binary_float_buffer(datadir, "vs.dat", total);
-                data->rho_buffer = get_binary_float_buffer(datadir, "rho.dat", total);
-        }
-	data->elems=total;
-        data->in_memory=1;
-
-        } else {
-	  data->elems=0;
-	  data->vp_buffer=NULL;
-	  data->vs_buffer=NULL;
-	  data->rho_buffer=NULL;
-    }
     return data;
 }
 
@@ -138,21 +111,9 @@ int free_muscal2_dataset(muscal2_dataset_t *data) {
     free(data->depths);
     free(data->latitudes);
     free(data->longitudes);
-    if(data->vp_buffer != NULL) free(data->vp_buffer);
-    if(data->vs_buffer != NULL) free(data->vs_buffer);
-    if(data->rho_buffer != NULL) free(data->rho_buffer);
-    nc_close(data->ncid);
 
     if(data->kdsurface!=NULL) {
       free_kdnodesetup(data->kdsurface);
-    }
-
-    //free the caches
-    for(int i=0; i< data->layer_cache_cnt; i++) {
-      free_a_cache_layer(data->layer_cache[i]);
-    }
-    for(int i=0; i< data->col_cache_cnt; i++) {
-      free_a_cache_col(data->col_cache[i]);
     }
 
     free(data);

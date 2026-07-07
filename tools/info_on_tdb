@@ -1,0 +1,34 @@
+
+from convert_nc.py call
+
+Dimensions:    (depth: 210, latitude: 1251, longitude: 1301)
+Coordinates:
+  * longitude  (longitude) float32 -126.0 -126.0 -126.0 ... -113.0 -113.0 -113.0
+  * latitude   (latitude) float32 31.0 31.01 31.02 31.03 ... 43.48 43.49 43.5
+  * depth      (depth) float32 0.0 50.0 100.0 150.0 ... 9.7e+04 9.8e+04 9.9e+04
+Data variables:
+    vp         (depth, latitude, longitude) float32 dask.array<chunksize=(20, 200, 200), meta=np.ndarray>
+    vs         (depth, latitude, longitude) float32 dask.array<chunksize=(20, 200, 200), meta=np.ndarray>
+    rho        (depth, latitude, longitude) float32 dask.array<chunksize=(20, 200, 200), meta=np.ndarray>
+
+
+
+
+
+import tiledb
+
+with tiledb.open("model_array", "r") as A:
+    res = A[100, 200, 50]   # (i, j, k)
+print(res)
+
+and vp=res["vp"][l0]
+grab the data point using a offset
+
+or,
+
+with tiledb.open("model_array", "r", attr="vp") as A:
+    vp = A[100, 200, 50][0]
+
+
+
+
