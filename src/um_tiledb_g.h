@@ -21,7 +21,7 @@
 #include "tiledb/tiledb.h"
 
 /* Match target location created by conversion pipeline */
-const char *ARRAY_URI = "/home/mei/muscal-git/TileDB-convert/muscal_tiledb_array"; 
+const char *ARRAY_URI = "/var/www/html/UCVM_rel/model/muscal2/tools/muscal_tiledb"
 
 /* Global dataset matrix bounds (use 1-indexed matching conversion pipeline) */
 #define DEPTH_MAX 210

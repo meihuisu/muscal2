@@ -150,7 +150,7 @@ float trilinear_interp_tiledb(const float c[8], float fdep, float flat, float fl
 
 //XXX
 
-int foo_main(int argc, char *const argv[]) {
+int main(int argc, char *const argv[]) {
   int rc;
   tiledb_ctx_t *ctx = NULL;
 
