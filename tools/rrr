@@ -1,0 +1,6 @@
+
+
+rm -rf read_coords
+gcc10-gcc -I/home/mei/muscal-git/TileDB/opt/tiledb/include read_coords.c -o read_coords -L/home/mei/muscal-git/TileDB/opt/tiledb/lib64 -ltiledb -Wl,-rpath,/home/mei/muscal-git/TileDB/opt/tiledb/lib64 
+
+./read_coords
