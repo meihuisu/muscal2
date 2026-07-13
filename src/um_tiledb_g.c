@@ -1,4 +1,5 @@
-/* um_tiledb_g.c (Fixed Version)
+/* 
+    um_tiledb_g.c 
 */
 
 #include <stdio.h>
@@ -150,6 +151,13 @@ float trilinear_interp_tiledb(const float c[8], float fdep, float flat, float fl
   return c0 * (1.0f - fdep) + c1 * fdep;
 }
 
+void _dump_corners(float *corners) {
+  // should be 8 values 
+  fprintf(stderr,"%lf %lf %lf %lf %lf %lf %lf %lf\n",
+    corners[0], corners[1], corners[2], corners[3], corners[4], corners[5], corners[6], corners[7]);
+}
+
+
 int main(int argc, char *const argv[]) {
   int rc;
   tiledb_ctx_t *ctx = NULL;
@@ -200,7 +208,7 @@ int main(int argc, char *const argv[]) {
         return 1;
       }
 
-      dump_corners(corners_vp);
+      _dump_corners(corners_vp);
     
       /* FIXED: Renamed functions to reflect actual active signatures */
       float interp_vp  = trilinear_interp_tiledb(corners_vp, fdep, flat, flon);

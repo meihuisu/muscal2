@@ -68,8 +68,18 @@ void create_tiledb_array_v230(const char* array_name) {
 int main() {
     const char* nc_filename = "/var/www/html/CVM_DATASET_DIRECTORY/model/muscal/model_MUSCAL_CANVAS_dll0.01_vardz_float32_cmpd.nc";
     const char* tiledb_array_name = "muscal_tiledb";
-    int ncid, vp_id, vs_id, rho_id;
+    int ncid = -1, vp_id, vs_id, rho_id;
     int depth_var_id, lat_var_id, lon_var_id;
+
+    // Pointers initialized to NULL for safety in error_cleanup jumps
+    tiledb_ctx_t* ctx = NULL;
+    tiledb_array_t* array = NULL;
+    float* coords_depth = NULL;
+    float* coords_lat = NULL;
+    float* coords_lon = NULL;
+    float* buffer_vp = NULL;
+    float* buffer_vs = NULL;
+    float* buffer_rho = NULL;
 
     printf("Opening target NetCDF storage component: %s...\n", nc_filename);
     ERR_CHCK(nc_open(nc_filename, NC_NOWRITE, &ncid));
@@ -86,9 +96,7 @@ int main() {
     create_tiledb_array_v230(tiledb_array_name);
 
     // Establish Core Write Session via Context Handles
-    tiledb_ctx_t* ctx;
     tiledb_ctx_alloc(NULL, &ctx);
-    tiledb_array_t* array;
     tiledb_array_alloc(ctx, tiledb_array_name, &array);
     if (tiledb_array_open(ctx, array, TILEDB_WRITE) != TILEDB_OK) {
         fprintf(stderr, "TileDB Error: Unable to open array file for writing.\n");
@@ -99,13 +107,13 @@ int main() {
     // STEP 1: READ & ATTACH PHYSICAL COORDINATE ARRAYS (METADATA)
     // =========================================================
     printf("Extracting 1D real-world location tracking vectors...\n");
-    float* coords_depth = (float*)malloc(DIM_DEPTH * sizeof(float));
-    float* coords_lat   = (float*)malloc(DIM_LAT * sizeof(float));
-    float* coords_lon   = (float*)malloc(DIM_LON * sizeof(float));
+    coords_depth = (float*)malloc(DIM_DEPTH * sizeof(float));
+    coords_lat   = (float*)malloc(DIM_LAT * sizeof(float));
+    coords_lon   = (float*)malloc(DIM_LON * sizeof(float));
 
     if (!coords_depth || !coords_lat || !coords_lon) {
         fprintf(stderr, "Fatal error: Out of heap space for coordinate mapping vectors.\n");
-        return -1;
+        goto error_cleanup;
     }
 
     ERR_CHCK(nc_get_var_float(ncid, depth_var_id, coords_depth));
@@ -117,7 +125,9 @@ int main() {
     tiledb_array_put_metadata(ctx, array, "coords_latitude", TILEDB_FLOAT32, DIM_LAT, coords_lat);
     tiledb_array_put_metadata(ctx, array, "coords_longitude", TILEDB_FLOAT32, DIM_LON, coords_lon);
 
-    free(coords_depth); free(coords_lat); free(coords_lon);
+    free(coords_depth); coords_depth = NULL;
+    free(coords_lat);   coords_lat = NULL;
+    free(coords_lon);   coords_lon = NULL;
     printf(" -> Coordinate vectors correctly bound to schema metadata headers.\n");
 
     // =========================================================
@@ -127,13 +137,13 @@ int main() {
     size_t slab_bytes = max_elements_per_slab * sizeof(float);
 
     printf("Allocating stream window buffers (~%.2f MB allocated memory footprint per channel)...\n", (double)slab_bytes / (1024.0 * 1024.0));
-    float* buffer_vp = (float*)malloc(slab_bytes);
-    float* buffer_vs = (float*)malloc(slab_bytes);
-    float* buffer_rho = (float*)malloc(slab_bytes);
+    buffer_vp = (float*)malloc(slab_bytes);
+    buffer_vs = (float*)malloc(slab_bytes);
+    buffer_rho = (float*)malloc(slab_bytes);
 
     if (!buffer_vp || !buffer_vs || !buffer_rho) {
         fprintf(stderr, "Fatal error: Streaming slice allocation failure.\n");
-        return -1;
+        goto error_cleanup;
     }
 
     printf("Executing streaming pass across hyperslab iterations...\n");
@@ -142,7 +152,9 @@ int main() {
                                  ? (DIM_DEPTH - start_depth) 
                                  : DEPTH_CHUNK_SIZE;
         
+        // Compute element count and the shared buffer size in BYTES
         uint64_t current_elements = (uint64_t)current_chunk_size * DIM_LAT * DIM_LON;
+        uint64_t current_element_bytes = current_elements * sizeof(float);
 
         printf(" -> Processing slice section for depth indices: [%d to %d]\n", start_depth, start_depth + current_chunk_size - 1);
 
@@ -176,20 +188,47 @@ int main() {
         // Bind the completed subarray tracking object to the current query context
         tiledb_query_set_subarray_t(ctx, query, subarray);
 
-        // Bind attributes using v2.30.0 compliant buffer assignments
-        tiledb_query_set_data_buffer(ctx, query, "vp", buffer_vp, &current_elements);
-        tiledb_query_set_data_buffer(ctx, query, "vs", buffer_vs, &current_elements);
-        tiledb_query_set_data_buffer(ctx, query, "rho", buffer_rho, &current_elements);
+        // Bind attributes using the shared byte-count tracking reference.
+        // (Note: TileDB safely reads the value at query submit time, but we pass the address 
+        // separately for each call because TileDB may write back to it upon completion)
+        uint64_t bytes_vp = current_element_bytes;
+        uint64_t bytes_vs = current_element_bytes;
+        uint64_t bytes_rho = current_element_bytes;
 
-        // Execute background serialization run
-        tiledb_query_submit(ctx, query);
+        tiledb_query_set_data_buffer(ctx, query, "vp", buffer_vp, &bytes_vp);
+        tiledb_query_set_data_buffer(ctx, query, "vs", buffer_vs, &bytes_vs);
+        tiledb_query_set_data_buffer(ctx, query, "rho", buffer_rho, &bytes_rho);
 
-        // Free query loop specific resources
+        // 1. Submit the write query and check immediate API return value
+        if (tiledb_query_submit(ctx, query) != TILEDB_OK) {
+            tiledb_error_t* err = NULL;
+            tiledb_ctx_get_last_error(ctx, &err);
+            const char* msg = NULL;
+            tiledb_error_message(err, &msg);
+            fprintf(stderr, "\n[ERROR] TileDB query submission failed at depth %d: %s\n", start_depth, msg);
+            tiledb_error_free(&err);
+            
+            tiledb_subarray_free(&subarray);
+            tiledb_query_free(&query);
+            goto error_cleanup;
+        }
+
+        // 2. Double-check the query execution status lifecycle
+        tiledb_query_status_t status;
+        tiledb_query_get_status(ctx, query, &status);
+        if (status != TILEDB_COMPLETED) {
+            fprintf(stderr, "\n[ERROR] TileDB query finished with unexpected status %d at depth %d\n", status, start_depth);
+            tiledb_subarray_free(&subarray);
+            tiledb_query_free(&query);
+            goto error_cleanup;
+        }
+
+        // Free loop specific iteration structures
         tiledb_subarray_free(&subarray);
         tiledb_query_free(&query);
     }
 
-    // --- PIPELINE CLEANUP ---
+    // --- PIPELINE CLEANUP (NORMAL COMPLETION) ---
     nc_close(ncid);
     tiledb_array_close(ctx, array);
     tiledb_array_free(&array);
@@ -201,4 +240,23 @@ int main() {
 
     printf("\nUnified streaming pipeline completed successfully!\n");
     return 0;
+
+// --- ERROR CLEANUP TARGET ---
+error_cleanup:
+    if (ncid >= 0) nc_close(ncid);
+    if (array) {
+        tiledb_array_close(ctx, array);
+        tiledb_array_free(&array);
+    }
+    if (ctx) tiledb_ctx_free(&ctx);
+    
+    free(coords_depth);
+    free(coords_lat);
+    free(coords_lon);
+    free(buffer_vp);
+    free(buffer_vs);
+    free(buffer_rho);
+    
+    fprintf(stderr, "\nPipeline aborted due to runtime errors.\n");
+    return -1;
 }
