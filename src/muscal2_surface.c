@@ -16,7 +16,6 @@
 #include <string.h>
 #include "ucvm_model_dtypes.h"
 #include "muscal2_util.h"
-#include "um_netcdf.h"
 #include "cJSON.h"
 #include "muscal2.h"
 
@@ -107,7 +106,7 @@ int main(int argc, char* const argv[]) {
     int done=0;
     int idx=0;
 
-    muscal2_dataset_t *dataset= muscal2_velocity_model->datasets[0];
+    muscal2_dataset_t *dataset= muscal2_dataset->datasets[0];
     float *deplist=dataset->depths;
 
     while (!done) {
@@ -148,7 +147,7 @@ void extract_surface(float dep) {
 
     if(muscal2_debug) { fprintf(stderrfp, "calling : depth(%d)\n", dep); }
     int data_idx=0; // first and only one
-    muscal2_dataset_t *dataset= muscal2_velocity_model->datasets[data_idx];
+    muscal2_dataset_t *dataset= muscal2_dataset->datasets[data_idx];
 
     float *lon_list=dataset->longitudes;
     float *lat_list=dataset->latitudes;

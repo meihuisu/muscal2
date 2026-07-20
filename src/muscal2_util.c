@@ -27,7 +27,7 @@ float *get_binary_float_buffer(const char *datadir, char *datafile, int total) {
     return buffer;
 }
 
-// find nearest buffer idx even it it is over it
+// find nearest buffer idx even if it is over it
 int find_nearest_buffer_idx(float *buffer, size_t nelems, float target) {
     size_t lo = 0, hi = nelems; // search in [lo, hi)
     while (lo < hi) {
@@ -115,15 +115,9 @@ void dump_corners(FILE *fp, float *corners) {
 }
 
 
+// create a float array from a string of "{ 10.1, 2.5 ...}",
 // remember to free it
-float *float_array_it(char *str) {
-   // XX
-   float *farray= XX;
-
-   return farray;
-}
-
-char *float_array_it(const char *str, size_t *n){
+float *float_array_it(const char *str, size_t *n){
 
     const char *p = str;
     char *end;
@@ -131,7 +125,7 @@ char *float_array_it(const char *str, size_t *n){
     size_t count = 0;
 
     float *arr = (float  *)malloc(capacity * sizeof(float));
-    if (!arr) return -1;
+    if (!arr) return NULL;
 
     // Skip whitespace
     while (isspace(*p)) p++;
@@ -139,7 +133,7 @@ char *float_array_it(const char *str, size_t *n){
     // Expect '{'
     if (*p != '{') {
         free(arr);
-        return -1;
+        return NULL;
     }
     p++;  // skip '{'
 
@@ -157,7 +151,7 @@ char *float_array_it(const char *str, size_t *n){
         float val = strtof(p, &end);
         if (p == end) {
             free(arr);
-            return -1;  // parse error
+            return NULL;  // parse error
         }
 
         // Append to array
@@ -166,7 +160,7 @@ char *float_array_it(const char *str, size_t *n){
             float *tmp = realloc(arr, capacity * sizeof(float));
             if (!tmp) {
                 free(arr);
-                return -1;
+                return NULL;
             }
             arr = tmp;
         }
@@ -185,7 +179,7 @@ char *float_array_it(const char *str, size_t *n){
             break;
         } else {
             free(arr);
-            return -1;  // invalid delimiter
+            return NULL;  // invalid delimiter
         }
     }
 

@@ -13,6 +13,7 @@
 #define MUSCAL2_CACHE_COL_MAX 10
 
 #include "kdtree_util.h"
+#include "muscal2.h"
 #include "tiledb/tiledb.h"
 
 typedef struct muscal2_properties_t muscal2_properties_t;
@@ -46,7 +47,8 @@ typedef struct muscal2_dataset_t {
 
 // for tiledb dataset
         tiledb_ctx_t *tiledb_ctx;
-        char *tiledb_array_uri;
+        tiledb_array_t *tiledb_array;
+        char *tiledb_uri;
 
 } muscal2_dataset_t;
 
@@ -63,19 +65,16 @@ typedef struct muscal2_pt_info_t {
 } muscal2_pt_info_t;
 
 /* utilitie functions */
-muscal2_dataset_t *make_a_muscal2_dataset(char *datadir, char *datafile);
+muscal2_dataset_t * muscal2_read_dataset(char *datadir, char *datafile);
+void muscal2_read_surface(muscal2_dataset_t *model, int count, char *datadir, char *surface_file);
 
-int free_muscal2_dataset(muscal2_dataset_t *data);
-muscal2_cache_col_t *find_a_cache_col(muscal2_dataset_t *dataset, int target_lat_idx, int target_lon_idx);
-void free_a_cache_col(muscal2_cache_col_t *col);
-muscal2_cache_layer_t *find_a_cache_layer(muscal2_dataset_t *dataset, int target_dep_idx);
-void free_a_cache_layer(muscal2_cache_layer_t *layer);
-void add_surface_data(muscal2_dataset_t  *data, char *sfile, int s_count);
+int get_one_property(muscal2_dataset_t *model, muscal2_pt_info_t *pt, muscal2_properties_t *data);
+int get_interp_property(muscal2_dataset_t *model, muscal2_pt_info_t *pt, muscal2_properties_t *data);
+int get_1dnn_property(muscal2_dataset_t *model, muscal2_pt_info_t *pt, muscal2_properties_t *data);
 
-int get_one_property_binary(muscal2_dataset_t *dataset, muscal2_pt_info_t *pt, muscal2_properties_t *data);
-int get_one_muscal21d_property(muscal2_dataset_t *dataset, muscal2_pt_info_t *pt, muscal2_properties_t *data);
-void get_interp_property_binary(muscal2_dataset_t *dataset, muscal2_pt_info_t *pt, muscal2_properties_t *data);
-
+void add_surface_data(muscal2_dataset_t  *model, char *sfile, int s_count);
+void dump_dataset_metadata(muscal2_dataset_t *model);
+int free_muscal2_dataset(muscal2_dataset_t *model);
 
 #endif
 

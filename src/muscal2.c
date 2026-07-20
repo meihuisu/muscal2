@@ -10,7 +10,6 @@
 #include <limits.h>
 #include "ucvm_model_dtypes.h"
 #include "muscal2.h"
-#include "um_netcdf.h"
 #include "cJSON.h"
 
 int muscal2_ucvm_debug=1;
@@ -33,8 +32,8 @@ char muscal2_data_directory[128];
 
 /** Configuration parameters. */
 muscal2_configuration_t *muscal2_configuration;
-/** Holds pointers to the velocity model data OR indicates it can be read from file. */
-muscal2_model_t *muscal2_velocity_model;
+/** Holds all info extracted from tiledb data */
+muscal2_dataset_t *muscal2_dataset;
 
 /**
  * Initializes the muscal2 plugin model within the UCVM framework. In order to initialize
@@ -62,9 +61,6 @@ int muscal2_init(const char *dir, const char *label) {
     muscal2_config_string[0]='\0';
     muscal2_config_sz=0;
 
-    muscal2_velocity_model = calloc(1, sizeof(muscal2_model_t));
-    muscal2_velocity_model_init(muscal2_velocity_model);
-
     // Configuration file location.
     sprintf(configbuf, "%s/model/%s/data/config", dir, label);
 
@@ -84,17 +80,14 @@ int muscal2_init(const char *dir, const char *label) {
            sprintf(muscal2_data_directory, "%s/model/%s/data/%s", dir, label, muscal2_configuration->model_dir);
     }
 
-    // Can we allocate the model, or parts of it, to memory. If so, we do.
-    muscal2_velocity_model->dataset_cnt=muscal2_configuration->dataset_cnt;
-    tempVal = muscal2_read_model(muscal2_configuration, muscal2_velocity_model, muscal2_data_directory);
-
-    if (tempVal == SUCCESS) {
-      if(muscal2_ucvm_debug) {
-        fprintf(stderrfp, "Setup model file\n");
-      }
-    } else if (tempVal == FAIL) {
+    muscal2_dataset = muscal2_read_dataset(muscal2_data_directory, muscal2_configuration->dataset_file);
+    if (muscal2_dataset == NULL) {
         muscal2_print_error("No model file was found to read from.");
         return FAIL;
+    }
+    if( muscal2_configuration->enable_1d) {
+        muscal2_read_surface(muscal2_dataset, muscal2_configuration->surface_count,
+                muscal2_data_directory, muscal2_configuration->surface_file);
     }
 
     // setup config_string 
@@ -119,32 +112,14 @@ int muscal2_query(muscal2_point_t *points, muscal2_properties_t *data, int numpo
 
 if(muscal2_ucvm_debug){ fprintf(stderrfp,"\ncalling muscal2_query with %d numpoints\n",numpoints); }
 
-    int data_idx = 0;
-    nc_type vtype=NC_FLOAT;
+    muscal2_dataset_t *model=muscal2_dataset;
 
-    /* iterate through the dataset to see where does the point fall into */
-    /* for now assume there is only 1 dataset */
-    muscal2_dataset_t *dataset= muscal2_velocity_model->datasets[data_idx];
-
-    float *lon_list=dataset->longitudes;
-    float *lat_list=dataset->latitudes;
-    float *dep_list=dataset->depths;
-    int nx=dataset->nx;
-    int ny=dataset->ny;
-    int nz=dataset->nz;
-
-    // hold current working buffers
-    float *tmp_vp_buffer=NULL;
-    float *tmp_vs_buffer=NULL;
-    float *tmp_rho_buffer=NULL;
-
-    int first_lon_idx;
-    int first_lat_idx;
-    int first_dep_idx;
-
-    int same_lon_idx=1;
-    int same_lat_idx=1;
-    int same_dep_idx=1;
+    float *lon_list=model->longitudes;
+    float *lat_list=model->latitudes;
+    float *dep_list=model->depths;
+    int nx=model->nx;
+    int ny=model->ny;
+    int nz=model->nz;
 
     int lon_idx;
     int lat_idx;
@@ -172,54 +147,32 @@ if(muscal2_ucvm_debug){ fprintf(stderrfp,"\ncalling muscal2_query with %d numpoi
         pt_info[i].lat_idx=find_buffer_idx_clamped(lat_list,ny,pt_info[i].lat);
         pt_info[i].dep_idx=find_buffer_idx_clamped(dep_list,nz,pt_info[i].dep);
 
-	/* check if out of range */
-	if(pt_info[i].lon_idx < 0 || pt_info[i].lat_idx < 0 || pt_info[i].dep_idx < 0) {
+     /* check if out of range */
+        if(pt_info[i].lon_idx < 0 || pt_info[i].lat_idx < 0 || pt_info[i].dep_idx < 0) {
           continue;
         }
 
-        if(i==0) {
-            first_dep_idx=pt_info[i].dep_idx;
-            first_lon_idx=pt_info[i].lon_idx;
-            first_lat_idx=pt_info[i].lat_idx;
-        }
-
-        if(pt_info[i].dep_idx != first_dep_idx) same_dep_idx=0;
-        if(pt_info[i].lon_idx != first_lon_idx) same_lon_idx=0;
-        if(pt_info[i].lat_idx != first_lat_idx) same_lat_idx=0;
-
-	if(muscal2_configuration->interpolation) { // fill cell percent
+        if(muscal2_configuration->interpolation) { // fill cell percent
             pt_info[i].lon_percent=find_cell_percent(lon_list,pt_info[i].lon,pt_info[i].lon_idx);
             pt_info[i].lat_percent=find_cell_percent(lat_list,pt_info[i].lat,pt_info[i].lat_idx);
             pt_info[i].dep_percent=find_cell_percent(dep_list,pt_info[i].dep,pt_info[i].dep_idx);
         }
     }
 
-// handle access 
-// if not too_big, grab from in-memory buffer one at a time
-// if too_big, then collect up all the index list and make just one call and
-// retrieve and disperse the result back into data
-
-    if(!iXXX->too_big) { 
-
-        // should be in the in-memory 
-        for(int i=0; i<numpoints; i++) {
-            if(!muscal2_configuration->interpolation) { 
-		// no interp
-                get_one_property_binary(dataset, &(pt_info[i]), &(data[i]));
-                } else {
-                    get_interp_property_binary(dataset, &(pt_info[i]), &(data[i]));
-            }
-
-	    // If result is None, then need to process for muscal21d
-	    // with muscal21d with depth
-	    // if depth within GTL, the do vs interp ??
-            if(isnan(data[i].vp) && isnan(data[i].vs) && muscal2_configuration->enable_1d) {
-
-if(muscal2_ucvm_debug){ fprintf(stderrfp,">> calling get_one_nuscal1d_property\n"); }
-                get_one_muscal21d_property(dataset, &(pt_info[i]), &(data[i]));
-            }
+    // should be in the in-memory 
+    for(int i=0; i<numpoints; i++) {
+        if(!muscal2_configuration->interpolation) { 
+        // no interp
+            get_one_property(model, &(pt_info[i]), &(data[i]));
+            } else {
+                get_interp_property(model, &(pt_info[i]), &(data[i]));
         }
 
+// If result is None, then need to process
+// with 1d nearest neighbor surface property
+        if(isnan(data[i].vp) && isnan(data[i].vs) && muscal2_configuration->enable_1d) {
+            get_1dnn_property(model, &(pt_info[i]), &(data[i]));
+        }
     } 
     return SUCCESS;
 }
@@ -242,8 +195,8 @@ int muscal2_finalize() {
     if (muscal2_configuration) {
         muscal2_configuration_finalize(muscal2_configuration);
     }
-    if (muscal2_velocity_model) {
-        muscal2_velocity_model_finalize(muscal2_velocity_model);
+    if (muscal2_dataset) {
+        free_muscal2_dataset(muscal2_dataset);
     }
 
     if(muscal2_ucvm_debug) {
@@ -306,7 +259,6 @@ int muscal2_read_configuration(char *file, muscal2_configuration_t *config) {
     char key[40];
     char value[1000];
     char line_holder[2000];
-    config->dataset_cnt=0;
 
     // If our file pointer is null, an error has occurred. Return fail.
     if (fp == NULL) { return UCVM_MODEL_CODE_ERROR; }
@@ -327,69 +279,22 @@ int muscal2_read_configuration(char *file, muscal2_configuration_t *config) {
 if(muscal2_ucvm_debug){ fprintf(stderrfp, "enabled Interpolation\n"); }
                 }
             }
-            if (strcmp(key, "nx") == 0) { 
-                if (strcmp(value,"NA") != 0) { config->nx =atof(value); }
-            }
-            if (strcmp(key, "ny") == 0) { 
-                if (strcmp(value,"NA") != 0) { config->ny =atof(value); }
-            }
-            if (strcmp(key, "nz") == 0) { 
-                if (strcmp(value,"NA") != 0) { config->nz =atof(value); }
-            }
-            if (strcmp(key, "depth") == 0) { 
-                if (strcmp(value,"NA") != 0) { config->depth =atof(value); }
-            }
-            if (strcmp(key, "depth_interval") == 0) { 
-                if (strcmp(value,"NA") != 0) { config->depth_interval =atof(value); }
-            }
-
-            if (strcmp(key, "depth_list") == 0) { 
-                config->depths=NULL;
-                if (strcmp(value,"NA") != 0) {
-                    size_t cnt;
-                    config->depths = float_array_it(value, &cnt);
-                }
-            }
-            if (strcmp(key, "longitude_list") == 0) { 
-                config->longitudes=NULL;
-                if (strcmp(value,"NA") != 0) { 
-                    size_t cnt;
-                    config->logitudes = float_array_it(value, &cnt);
-                }
-            }
-            if (strcmp(key, "latitude_list") == 0) { 
-                config->latitudes=NULL;
-                if (strcmp(value,"NA") != 0) { 
-                    size_t cnt;
-                    config->latitudes = float_array_it(value, &cnt);
-                }
-            }
-
-            if (strcmp(key, "data_type") == 0) { 
-                if (strcmp(value,"tiledb") == 0) { 
-                   config->use_tiledb=1;
-                   } else {
-                       fprintf(stderr, "BAD: config data_type bad seeting\n");
-                }
-            }
             if (strcmp(key, "enable_1d") == 0) { 
                 config->enable_1d=0;
                 if (strcmp(value,"on") == 0) { config->enable_1d=1;
 if(muscal2_ucvm_debug){ fprintf(stderrfp, "enabled muscal21d to fill all empty returns\n"); }
                 }
             }
-         /* for each dataset, allocate a model dataset's block and fill in */ 
+         /* get data for the dataset */
             if (strcmp(key, "data_file") == 0) { 
-                if( config->dataset_cnt < MUSCAL2_DATASET_MAX) {
                   int rc=_setup_a_dataset(config,value);
-                  if(rc == 1 ) { config->dataset_cnt++; }
-                } else { muscal2_print_error("Exceeded dataset maximum limit."); }
-	    } 
+                  if(rc !=1 ) { muscal2_print_error("BAD data_file."); }
+         } 
         }
     }
 
     // Have we set up all muscal2_configuration parameters?
-    if (config->utm_zone == 0 || config->model_dir[0] == '\0' || config->dataset_cnt == 0 ) {
+    if (config->utm_zone == 0 || config->model_dir[0] == '\0' == 0 ) {
         muscal2_print_error("One muscal2_configuration parameter not specified. Please check your muscal2_configuration file.");
         return UCVM_MODEL_CODE_ERROR;
     }
@@ -408,7 +313,6 @@ if(muscal2_ucvm_debug){ fprintf(stderrfp, "enabled muscal21d to fill all empty r
 int _setup_a_dataset(muscal2_configuration_t *config, char *blobstr) {
     /* parse the blob and grab the meta data */
     cJSON *confjson=cJSON_Parse(blobstr);
-    int idx=config->dataset_cnt;
 
     /* grab the related netcdf file and extract dataset info */
     if(confjson == NULL) {
@@ -421,23 +325,23 @@ int _setup_a_dataset(muscal2_configuration_t *config, char *blobstr) {
 
     cJSON *label = cJSON_GetObjectItemCaseSensitive(confjson, "LABEL");
     if(cJSON_IsString(label)){
-        config->dataset_labels[idx]=strdup(label->valuestring);
+        config->dataset_label=strdup(label->valuestring);
     }
     cJSON *file = cJSON_GetObjectItemCaseSensitive(confjson, "FILE");
     if(cJSON_IsString(file)){
-        config->dataset_files[idx]=strdup(file->valuestring);
+        config->dataset_file=strdup(file->valuestring);
     }
     cJSON *surface = cJSON_GetObjectItemCaseSensitive(confjson, "SURFACE");
     if(cJSON_IsString(surface)){
-        config->surface_files[idx]=strdup(surface->valuestring);
+        config->surface_file=strdup(surface->valuestring);
         } else {
-            config->surface_files[idx]=NULL;
+            config->surface_file=NULL;
     }
     cJSON *surface_count = cJSON_GetObjectItemCaseSensitive(confjson, "SURFACE_COUNT");
     if(cJSON_IsNumber(surface_count)) {
-        config->surface_counts[idx]=surface_count->valueint;
+        config->surface_count=surface_count->valueint;
         } else {
-          config->surface_counts[idx]=0;
+          config->surface_count=0;
     }
     return 1;
 }
@@ -478,73 +382,18 @@ void _splitline(char* lptr, char key[], char value[]) {
   _trimLast(value,' ');
 }
 
-
-/*
- * setup the dataset's content 
- * and fill in the model info, one dataset at a time
- * and allocate required memory space
- *
- * */
-int muscal2_read_model(muscal2_configuration_t *config, muscal2_model_t *model, char *datadir) {
-
-    int max_idx=model->dataset_cnt; // how many datasets are there
-    for(int i=0; i<max_idx;i++) { 
-        muscal2_dataset_t *data=make_a_muscal2_dataset(config,datadir, config->dataset_files[i]); 
-        /* read in the surface data if enabled */
-        if(config->enable_1d) {
-           char filepath[256];
-           int count=config->surface_counts[i];
-           sprintf(filepath, "%s/%s", datadir, config->surface_files[i]);
-           if(muscal2_ucvm_debug) fprintf(stderrfp," data file ..%s\n", filepath);
-           add_surface_data(data, filepath, count);
-        }
-
-        model->datasets[i]=data;
-    }
-    return SUCCESS;
-}
-
 /**
  * Called to clear out the allocated memory 
  *
  * @param 
  */
 int muscal2_configuration_finalize(muscal2_configuration_t *config) {
-    int max_idx=config->dataset_cnt; // how many datasets are there
-    for(int i=0; i<max_idx;i++) { 
-        free(config->dataset_labels[i]);  
-        free(config->dataset_files[i]);  
-        if(config->surface_files[i]!=NULL)
-          free(config->surface_files[i]);  
-    }
+    free(config->dataset_label);  
+    free(config->dataset_file);  
+    if(config->surface_file !=NULL) free(config->surface_file);  
     free(config);
     return SUCCESS;
 }
-
-/**
- * Called to clear out the allocated memory for model datasets 
- *
- * @param 
- */
-
-int muscal2_velocity_model_finalize(muscal2_model_t *model) {
-    int max_idx=model->dataset_cnt; // how many datasets are there
-    for(int i=0; i<max_idx; i++) {
-        muscal2_dataset_t *data= model->datasets[i];
-        if(data != NULL) {
-          free_muscal2_dataset(data);
-        }
-    }
-    return SUCCESS;
-}
-int muscal2_velocity_model_init(muscal2_model_t *model) {
-    model->dataset_cnt=0;
-    for(int i=0; i<MUSCAL2_DATASET_MAX; i++) {
-        model->datasets[i]=NULL;
-    }
-    return SUCCESS;
-}
-
 
 /**
  * Prints the error string provided.
@@ -555,22 +404,6 @@ void muscal2_print_error(char *err) {
     fprintf(stderr, "An error has occurred while executing muscal2. The error was: \n\n%s\n",err);
     fprintf(stderr, "\nPlease contact software@scec.org and describe both the error and a bit\n");
     fprintf(stderr, "about the computer you are running muscal2 on (Linux, Mac, etc.).\n");
-}
-
-/*
- * Check if the data is too big to be loaded internally (exceed maximum
- * allowable by a INT variable)
- *
- */
-static int data_too_big(muscal2_dataset_t *dataset) {
-    long max_size= (long) (dataset->nx) * dataset->ny * dataset->nz;
-    long delta= max_size - INT_MAX;
-
-    if( delta > 0) {
-        return 1;
-        } else {
-            return 0;
-        }
 }
 
 // The following functions are for dynamic library mode. If we are compiling

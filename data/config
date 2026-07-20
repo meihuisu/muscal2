@@ -4,35 +4,21 @@ utm_zone=11
 # Model directory
 model_dir = muscal2 
 model_data_path = https://g-3a9041.a78b8.36fe.data.globus.org/ucvm/models
-
 /** 
        tiledb: tildb_ctx
           -file
               config ..nx/ny/nz
 **/
-// lon, NA or a value
-nx = 1301 
-// lat, NA or a value
-ny = 1251
-// depth, NA or a value
-nz = 210
+//nx = 1301 
+//ny = 1251
+//nz = 210
 
-depth = NA
-// fixed step, NA or a value
-depth_interval = NA
+//irregular steps
+//depth_list = NA
+//latitude_list = NA
+//longitude_list = NA
 
-// irregular steps, NA or an array of floats
-depth_list = NA
-// irregular steps, NA or an array of floats
-latitude_list = NA
-// irregular steps, NA or an array of floats
-longitude_list = NA
-
-# interpolation only works when using in-memory data access (too_big == off)
-interpolation = on 
-
-# set to 'tiledb' want to use tiledb's array
-data_type = tiledb
+interpolation = off 
 
 ## enable muscal1d with local vs tapering
 #default should be off.. used when making cybershake mesh
@@ -47,6 +33,6 @@ enable_1d = off
 #                   250 increments upto 10000
 #                   500 increments upto 30000
 #                   1000 increments upto 99000
-#/var/www/html/CVM_DATASET_DIRECTORY/model/muscal/muscal_canvas_tiledb_array
-data_file = { "LABEL" : "tiledb", "FILE" : "muscal_canvas_array.td", "SURFACE": "surface_945765.in", "SURFACE_COUNT": 945765 }
+#/var/www/html/CVM_DATASET_DIRECTORY/model/muscal/muscal_canvas.tdb
+data_file = { "LABEL" : "tiledb", "FILE" : "muscal_canvas.tdb", "SURFACE": "surface_945765.in", "SURFACE_COUNT": 945765 }
  

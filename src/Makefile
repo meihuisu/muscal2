@@ -112,21 +112,21 @@ am__can_run_installinfo = \
   esac
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
-ACLOCAL = ${SHELL} /var/www/html/UCVM_rel/model/muscal2/missing aclocal-1.13
+ACLOCAL = ${SHELL} /var/www/html/UCVM_rel/model/UCVM/work/model/muscal2/missing aclocal-1.13
 AMTAR = $${TAR-tar}
 AM_DEFAULT_VERBOSITY = 1
 AR = ar
-AUTOCONF = ${SHELL} /var/www/html/UCVM_rel/model/muscal2/missing autoconf
-AUTOHEADER = ${SHELL} /var/www/html/UCVM_rel/model/muscal2/missing autoheader
-AUTOMAKE = ${SHELL} /var/www/html/UCVM_rel/model/muscal2/missing automake-1.13
+AUTOCONF = ${SHELL} /var/www/html/UCVM_rel/model/UCVM/work/model/muscal2/missing autoconf
+AUTOHEADER = ${SHELL} /var/www/html/UCVM_rel/model/UCVM/work/model/muscal2/missing autoheader
+AUTOMAKE = ${SHELL} /var/www/html/UCVM_rel/model/UCVM/work/model/muscal2/missing automake-1.13
 AWK = gawk
-CC = gcc
+CC = gcc10-gcc
 CCDEPMODE = depmode=none
 CFLAGS = -g -O2
-CPP = gcc -E
+CPP = gcc10-gcc -E
 CPPFLAGS = -I/var/www/html/UCVM_rel/web/model/UCVM_TARGET/model/muscal2/include -I/var/www/html/UCVM_rel/web/model/UCVM_TARGET/lib/hdf5/include -I/var/www/html/UCVM_rel/web/model/UCVM_TARGET/lib/netcdf/include
-CXX = g++
-CXXCPP = g++ -E
+CXX = gcc10-g++
+CXXCPP = gcc10-g++ -E
 CXXDEPMODE = depmode=none
 CXXFLAGS = -g -O2
 CYGPATH_W = echo
@@ -147,7 +147,7 @@ INSTALL_DATA = ${INSTALL} -m 644
 INSTALL_PROGRAM = ${INSTALL}
 INSTALL_SCRIPT = ${INSTALL}
 INSTALL_STRIP_PROGRAM = $(install_sh) -c -s
-LD = /usr/bin/ld -m elf_x86_64
+LD = /usr/bin/gcc10-ld -m elf_x86_64
 LDFLAGS = -L/var/www/html/UCVM_rel/web/model/UCVM_TARGET/model/muscal2/lib -L/var/www/html/UCVM_rel/web/model/UCVM_TARGET/model/muscal2/lib64 -L/var/www/html/UCVM_rel/web/model/UCVM_TARGET/lib/hdf5/lib -L/var/www/html/UCVM_rel/web/model/UCVM_TARGET/lib/netcdf/lib -Wl,-rpath,/var/www/html/UCVM_rel/web/model/UCVM_TARGET/lib/hdf5/lib -Wl,-rpath,/var/www/html/UCVM_rel/web/model/UCVM_TARGET/lib/netcdf/lib
 LIBOBJS = 
 LIBS = -lhdf5 -lnetcdf
@@ -155,7 +155,7 @@ LIBTOOL = $(SHELL) $(top_builddir)/libtool
 LIPO = 
 LN_S = ln -s
 LTLIBOBJS = 
-MAKEINFO = ${SHELL} /var/www/html/UCVM_rel/model/muscal2/missing makeinfo
+MAKEINFO = ${SHELL} /var/www/html/UCVM_rel/model/UCVM/work/model/muscal2/missing makeinfo
 MANIFEST_TOOL = :
 MKDIR_P = /usr/bin/mkdir -p
 MUSCAL2_LARGEDATA_DIR = /var/www/html/CVM_DATASET_DIRECTORY/model/muscal2
@@ -180,13 +180,13 @@ SHELL = /bin/sh
 STRIP = strip
 TAR = /usr/bin/tar
 VERSION = 1.1.0
-abs_builddir = /var/www/html/UCVM_rel/model/muscal2/src
-abs_srcdir = /var/www/html/UCVM_rel/model/muscal2/src
-abs_top_builddir = /var/www/html/UCVM_rel/model/muscal2
-abs_top_srcdir = /var/www/html/UCVM_rel/model/muscal2
+abs_builddir = /var/www/html/UCVM_rel/model/UCVM/work/model/muscal2/src
+abs_srcdir = /var/www/html/UCVM_rel/model/UCVM/work/model/muscal2/src
+abs_top_builddir = /var/www/html/UCVM_rel/model/UCVM/work/model/muscal2
+abs_top_srcdir = /var/www/html/UCVM_rel/model/UCVM/work/model/muscal2
 ac_ct_AR = ar
-ac_ct_CC = gcc
-ac_ct_CXX = g++
+ac_ct_CC = gcc10-gcc
+ac_ct_CXX = 
 ac_ct_DUMPBIN = 
 am__include = include
 am__leading_dot = .
@@ -214,7 +214,7 @@ host_vendor = unknown
 htmldir = ${docdir}
 includedir = ${prefix}/include
 infodir = ${datarootdir}/info
-install_sh = ${SHELL} /var/www/html/UCVM_rel/model/muscal2/install-sh
+install_sh = ${SHELL} /var/www/html/UCVM_rel/model/UCVM/work/model/muscal2/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localedir = ${datarootdir}/locale
@@ -234,12 +234,12 @@ target_alias =
 top_build_prefix = ../
 top_builddir = ..
 top_srcdir = ..
-objects = um_netcdf.o muscal2_util.o muscal2_dataset.o cJSON.o kdtree_util.o
+objects = muscal2_util.o muscal2_dataset.o cJSON.o kdtree_util.o
 
 # General compiler/linker flags
-AM_CFLAGS = ${CFLAGS} ${CPPFLAGS} -I$(prefix)/include
-AM_LDFLAGS = ${LDFLAGS} -L$(prefix)/lib ${LIBS} -lm
-TARGETS = muscal2_surface muscal2_query libmuscal2.a libmuscal2.so build_kdtree query_kdtree
+AM_CFLAGS = ${CFLAGS} ${CPPFLAGS} -I$(prefix)/include -I${UCVM_INSTALL_PATH}/lib/tiledb/include
+AM_LDFLAGS = ${LDFLAGS} -L$(prefix)/lib ${LIBS} -L${UCVM_INSTALL_PATH}/lib/tiledb/lib64 -ltiledb -Wl,-rpath,${UCVM_INSTALL_PATH}/lib/tiledb/lib64 -lm
+TARGETS = muscal2_query libmuscal2.a libmuscal2.so 
 all: all-am
 
 .SUFFIXES:
@@ -443,10 +443,10 @@ clean:
 	rm -rf $(TARGETS)
 	rm -rf *.o
 
-libmuscal2.a: muscal2_static.o muscal2_util.o muscal2_dataset.o um_netcdf.o cJSON.o kdtree_util.o
+libmuscal2.a: muscal2_static.o muscal2_util.o muscal2_dataset.o cJSON.o kdtree_util.o
 	$(AR) rcs $@ $^
 
-libmuscal2.so: muscal2.o muscal2_util.o muscal2_dataset.o um_netcdf.o cJSON.o kdtree_util.o
+libmuscal2.so: muscal2.o muscal2_util.o muscal2_dataset.o cJSON.o kdtree_util.o
 	$(CC) -shared $(AM_FCFLAGS) -o libmuscal2.so $^ $(AM_LDFLAGS)
 
 muscal2.o: muscal2.c
@@ -462,24 +462,6 @@ muscal2_query.o: muscal2_query.c
 	$(CC) $(AM_CFLAGS) -o $@ -c $^
 
 muscal2_query : muscal2_query.o libmuscal2.a
-	$(CC) -o $@ $^ $(AM_LDFLAGS)
-
-muscal2_surface.o: muscal2_surface.c
-	$(CC) $(AM_CFLAGS) -o $@ -c $^
-
-muscal2_surface : muscal2_surface.o libmuscal2.a
-	$(CC) -o $@ $^ $(AM_LDFLAGS)
-
-build_kdtree.o: build_kdtree.c
-	$(CC) $(AM_CFLAGS) -o $@ -c $^
-
-build_kdtree: build_kdtree.o kdtree_util.o
-	$(CC) -o $@ $^ $(AM_LDFLAGS)
-
-query_kdtree.o: query_kdtree.c
-	$(CC) $(AM_CFLAGS) -o $@ -c $^
-
-query_kdtree: query_kdtree.o kdtree_util.o
 	$(CC) -o $@ $^ $(AM_LDFLAGS)
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

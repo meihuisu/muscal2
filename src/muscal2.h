@@ -57,14 +57,6 @@ typedef struct muscal2_properties_t {
 	double qs;
 } muscal2_properties_t;
 
-/**
-Dimensions: 3
-  dim[0] name=depth len=84
-  dim[1] name=latitude len=381
-  dim[2] name=longitude len=471
-Total elements: 15073884
-**/
-
 /** The MUSCAL2 configuration structure. */
 typedef struct muscal2_configuration_t {
 	/** The zone of UTM projection */
@@ -75,30 +67,15 @@ typedef struct muscal2_configuration_t {
 	/** interpolation on or off (1 or 0) */
 	int interpolation;
 
-	/** use_binary on or off (1 or 0) */
-	int use_binary;
-	/** use_tiledb on or off (1 or 0) */
-	int use_tiledb;
-
-	/** too_big on or off (1 or 0) */
-	int too_big;
-	/** add muscal21d on or off (1 or 0) */
+	/** add 1d on or off (1 or 0) */
 	int enable_1d;
 
         /* how many datasets are in the model */
-        int dataset_cnt;
-        char *dataset_files[MUSCAL2_DATASET_MAX];  //strdup
-	char *dataset_labels[MUSCAL2_DATASET_MAX]; // strdup
-        char *surface_files[MUSCAL2_DATASET_MAX];  //strdup
-        int surface_counts[MUSCAL2_DATASET_MAX];
-						  
+        char *dataset_file;  //strdup
+	char *dataset_label; // strdup
+        char *surface_file;  //strdup
+        int surface_count;
 } muscal2_configuration_t;
-
-typedef struct muscal2_model_t {
-        int dataset_cnt;
-        muscal2_dataset_t *datasets[MUSCAL2_DATASET_MAX];
-} muscal2_model_t;
-
 
 // Constants
 /** The version of the model. */
@@ -111,8 +88,8 @@ extern int muscal2_is_initialized;
 /** Configuration parameters. */
 extern muscal2_configuration_t *muscal2_configuration;
 
-/** Holds pointers to the velocity model data OR indicates it can be read from file. */
-extern muscal2_model_t *muscal2_velocity_model;
+/** Holds pointers to the velocity model data. */
+extern muscal2_dataset_t *muscal2_dataset;
 
 // UCVM API Required Functions
 
@@ -153,16 +130,8 @@ int muscal2_configuration_finalize(muscal2_configuration_t *config);
 
 /** Prints out the error string. */
 void muscal2_print_error(char *err);
-/** Retrieves the value at a specified grid point in the model. */
-void muscal2_read_properties(int x, int y, int z, muscal2_properties_t *data);
-/** Attempts to malloc the model size in memory and read it in. */
-int muscal2_read_model(muscal2_configuration_t *config, muscal2_model_t *model, char* dir);
 /** toggle debug flag **/
 void muscal2_setdebug();
-
-/** helper function for velocity_model **/
-int muscal2_velocity_model_init(muscal2_model_t *model);
-int muscal2_velocity_model_finalize(muscal2_model_t *model);
 
 /** parse JSON metadata blob per dataset **/
 int _setup_a_dataset(muscal2_configuration_t *conf, char *blobstr);

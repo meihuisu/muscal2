@@ -56,7 +56,7 @@ LookupResult find_nearest_and_fraction(const float* coord_array, uint32_t total_
 }
 
 int main() {
-    const char* tiledb_array_name = "muscal_tiledb";
+    const char* tiledb_array_name = "muscal_canvas.tdb";
 
     // --- Target Inputs ---
     float input_depth = 45.2f;   // in meters

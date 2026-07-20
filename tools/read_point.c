@@ -5,7 +5,7 @@
 #include <tiledb/tiledb.h>
 
 int main() {
-    const char* tiledb_array_name = "muscal_tiledb";
+    const char* tiledb_array_name = "muscal_canvas.tdb";
 
     // --- Target index coordinates ---
     int32_t target_dep_idx = 2;
