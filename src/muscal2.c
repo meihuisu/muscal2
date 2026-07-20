@@ -294,7 +294,8 @@ if(muscal2_ucvm_debug){ fprintf(stderrfp, "enabled muscal21d to fill all empty r
     }
 
     // Have we set up all muscal2_configuration parameters?
-    if (config->utm_zone == 0 || config->model_dir[0] == '\0' == 0 ) {
+    if (config->utm_zone == 0 || (strcmp(config->model_dir,"")==0) ||
+        config->dataset_file == NULL  || config->dataset_label == NULL ) {
         muscal2_print_error("One muscal2_configuration parameter not specified. Please check your muscal2_configuration file.");
         return UCVM_MODEL_CODE_ERROR;
     }

@@ -4,19 +4,15 @@ utm_zone=11
 # Model directory
 model_dir = muscal2 
 model_data_path = https://g-3a9041.a78b8.36fe.data.globus.org/ucvm/models
-/** 
-       tiledb: tildb_ctx
-          -file
-              config ..nx/ny/nz
-**/
-//nx = 1301 
-//ny = 1251
-//nz = 210
 
-//irregular steps
-//depth_list = NA
-//latitude_list = NA
-//longitude_list = NA
+#nx = 1301 
+#ny = 1251
+#nz = 210
+
+##irregular steps
+#depth_list = NA
+#latitude_list = NA
+#longitude_list = NA
 
 interpolation = off 
 
@@ -34,5 +30,5 @@ enable_1d = off
 #                   500 increments upto 30000
 #                   1000 increments upto 99000
 #/var/www/html/CVM_DATASET_DIRECTORY/model/muscal/muscal_canvas.tdb
-data_file = { "LABEL" : "tiledb", "FILE" : "muscal_canvas.tdb", "SURFACE": "surface_945765.in", "SURFACE_COUNT": 945765 }
+data_file = { "LABEL" : "tiledb", "FILE" : "model_MUSCAL_CANVAS_dll0.01_vardz_float32_cmpd.tiledb", "SURFACE": "surface_945765.in", "SURFACE_COUNT": 945765 }
  
