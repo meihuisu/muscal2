@@ -67,7 +67,7 @@ void create_tiledb_array_v230(const char* array_name) {
 
 int main() {
     const char* nc_filename = "/var/www/html/CVM_DATASET_DIRECTORY/model/muscal/model_MUSCAL_CANVAS_dll0.01_vardz_float32_cmpd.nc";
-    const char* tiledb_array_name = "muscal_canvas.tdb";
+    const char* tiledb_array_name = "model_MUSCAL_CANVAS_dll0.01_vardz_float32_cmpd.tiledb";
     int ncid = -1, vp_id, vs_id, rho_id;
     int depth_var_id, lat_var_id, lon_var_id;
 

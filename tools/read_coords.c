@@ -10,7 +10,7 @@
 #define DIM_LON 1301
 
 int main() {
-    const char* tiledb_array_name = "muscal_canvas.tdb";
+    const char* tiledb_array_name = "model_MUSCAL_CANVAS_dll0.01_vardz_float32_cmpd.tdb";
     
     // Core TileDB infrastructure handles initialized to NULL
     tiledb_ctx_t* ctx = NULL;
