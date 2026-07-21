@@ -259,22 +259,6 @@ int get_one_property(muscal2_dataset_t *model, muscal2_pt_info_t *pt, muscal2_pr
     if (query) tiledb_query_free(&query);
 }
 
-int get_interp_property(muscal2_dataset_t *model, muscal2_pt_info_t *pt, muscal2_properties_t *data) {
-   return 1;
-
-}
-
-int _buffer_offset(muscal2_dataset_t *model, int x_idx, int  y_idx, int z_idx) {
-    int nx=model->nx;
-    int ny=model->ny;
-    int nz=model->nz;
-
-    int offset= (z_idx)*(ny * nx)+(y_idx)*(nx)+x_idx;
-    if(muscal2_ucvm_debug) { fprintf(stderrfp,"\nTarget offset %d : idx lon/lat/dep = %d/%d/%d\n", offset,x_idx, y_idx, z_idx); }
-
-    return offset;
-}
-
 int get_1dnn_property(muscal2_dataset_t *model, muscal2_pt_info_t *pt, muscal2_properties_t *data) {
     if(muscal2_ucvm_debug) { fprintf(stderrfp,"\ncalling get_1dnn_property\n"); }
 
@@ -291,7 +275,8 @@ int get_1dnn_property(muscal2_dataset_t *model, muscal2_pt_info_t *pt, muscal2_p
     best_idx=best->lldindex;
 
     if(muscal2_ucvm_debug) { 
-      fprintf(stderrfp,"FOUND: %d(%lf):   %lf %lf %lf\n\n", best_idx, best_dist, pnts[best_idx].lon, pnts[best_idx].lat, pnts[best_idx].depth);
+      fprintf(stderrfp,"FOUND: %d(%lf):   %lf %lf %lf\n\n", best_idx, best_dist, 
+                         pnts[best_idx].lon, pnts[best_idx].lat, pnts[best_idx].depth);
     }
 
     data->vp=pnts[best_idx].vp;
@@ -300,6 +285,128 @@ int get_1dnn_property(muscal2_dataset_t *model, muscal2_pt_info_t *pt, muscal2_p
     return best_idx;
 }
 
+
+// Helper to access flattened 3D array index [d][lat][lon] for a 2x2x2 cube
+#define CUBE_INDEX(d, lat, lon) ((d) * 4 + (lat) * 2 + (lon))
+int get_interp_property(muscal2_dataset_t *model, muscal2_pt_info_t *pt, muscal2_properties_t *data) {
+
+    float target_depth=pt->dep;
+    float target_lat=pt->lat;
+    float target_lon=pt->lon;
+    int dep_idx = pt->dep_idx;
+    int lat_idx = pt->lat_idx;
+    int lon_idx = pt->lon_idx;
+
+    // Boundary checks to ensure 2x2x2 cube fits within bounds
+    if (dep_idx < 0 || dep_idx >= model->nz - 1 ||
+        lat_idx < 0 || lat_idx >= model->ny - 1 ||
+        lon_idx < 0 || lon_idx >= model->nx - 1) {
+        fprintf(stderr, "[ERROR] Target coordinates outside interpolatable range.\n");
+        return -1;
+    }
+
+    // 2. Compute normalized weights [0.0, 1.0]
+    float dep_percent   = pt->dep_percent;
+    float lat_percent = pt->lat_percent;
+    float lon_percent = pt->lon_percent;
+
+    // 3. Query the 2x2x2 (8 elements) range from TileDB
+    tiledb_query_t* query = NULL;
+    tiledb_subarray_t* subarray = NULL;
+
+    float val_vp[8]  = {0.0f};
+    float val_vs[8]  = {0.0f};
+    float val_rho[8] = {0.0f};
+
+    uint64_t bytes_vp  = sizeof(val_vp);
+    uint64_t bytes_vs  = sizeof(val_vs);
+    uint64_t bytes_rho = sizeof(val_rho);
+
+    tiledb_query_alloc(model->tiledb_ctx, model->tiledb_array, TILEDB_READ, &query);
+    tiledb_query_set_layout(model->tiledb_ctx, query, TILEDB_ROW_MAJOR);
+    tiledb_subarray_alloc(model->tiledb_ctx, model->tiledb_array, &subarray);
+
+    int32_t depth_range[] = {dep_idx, dep_idx + 1};
+    int32_t lat_range[]   = {lat_idx, lat_idx + 1};
+    int32_t lon_range[]   = {lon_idx, lon_idx + 1};
+
+    tiledb_subarray_add_range(model->tiledb_ctx, subarray, 0, &depth_range[0], &depth_range[1], NULL);
+    tiledb_subarray_add_range(model->tiledb_ctx, subarray, 1, &lat_range[0],   &lat_range[1],   NULL);
+    tiledb_subarray_add_range(model->tiledb_ctx, subarray, 2, &lon_range[0],   &lon_range[1],   NULL);
+    tiledb_query_set_subarray_t(model->tiledb_ctx, query, subarray);
+
+    tiledb_query_set_data_buffer(model->tiledb_ctx, query, "vp",  val_vp,  &bytes_vp);
+    tiledb_query_set_data_buffer(model->tiledb_ctx, query, "vs",  val_vs,  &bytes_vs);
+    tiledb_query_set_data_buffer(model->tiledb_ctx, query, "rho", val_rho, &bytes_rho);
+
+    if (tiledb_query_submit(model->tiledb_ctx, query) != TILEDB_OK) {
+        tiledb_error_t* err = NULL;
+        tiledb_ctx_get_last_error(model->tiledb_ctx, &err);
+        const char* msg = NULL;
+        tiledb_error_message(err, &msg);
+        fprintf(stderr, "[ERROR] TileDB query read failed: %s\n", msg);
+        tiledb_error_free(&err);
+        if (subarray) tiledb_subarray_free(&subarray);
+        if (query) tiledb_query_free(&query);
+        return -1;
+    }
+
+    tiledb_query_status_t status;
+    tiledb_query_get_status(model->tiledb_ctx, query, &status);
+
+    if (status != TILEDB_COMPLETED) {
+        fprintf(stderr, "[ERROR] Query finished with status: %d\n", status);
+        if (subarray) tiledb_subarray_free(&subarray);
+        if (query) tiledb_query_free(&query);
+        return -1;
+    }
+
+    // Cleanup TileDB resources
+    tiledb_subarray_free(&subarray);
+    tiledb_query_free(&query);
+
+    // 4. Perform Trilinear Interpolation Math
+    // Standard formula combining 8 corner values with weights
+    float interp_vp  = 0.0f;
+    float interp_vs  = 0.0f;
+    float interp_rho = 0.0f;
+
+    for (int d = 0; d < 2; ++d) {
+        float wd = (d == 0) ? (1.0f - dep_percent) : dep_percent;
+        for (int lat = 0; lat < 2; ++lat) {
+            float wlat = (lat == 0) ? (1.0f - lat_percent) : lat_percent;
+            for (int lon = 0; lon < 2; ++lon) {
+                float wlon = (lon == 0) ? (1.0f - lon_percent) : lon_percent;
+
+                float weight = wd * wlat * wlon;
+                int idx = CUBE_INDEX(d, lat, lon);
+
+                interp_vp  += val_vp[idx]  * weight;
+                interp_vs  += val_vs[idx]  * weight;
+                interp_rho += val_rho[idx] * weight;
+            }
+        }
+    }
+
+    // Save final interpolated values
+    data->vp  = interp_vp;
+    data->vs  = interp_vs;
+    data->rho = interp_rho;
+
+    return 0;
+}
+
+// OLD CODE
+int _buffer_offset(muscal2_dataset_t *model, int x_idx, int  y_idx, int z_idx) {
+    int nx=model->nx;
+    int ny=model->ny;
+    int nz=model->nz;
+    
+    int offset= (z_idx)*(ny * nx)+(y_idx)*(nx)+x_idx;
+    if(muscal2_ucvm_debug) { fprintf(stderrfp,"\nTarget offset %d : idx lon/lat/dep = %d/%d/%d\n", offset,x_idx, y_idx, z_idx); }
+    
+    return offset;
+}   
 
 float _interp_a_point(muscal2_dataset_t *model, float *buffer, muscal2_pt_info_t *pt) {
     int lon_idx=pt->lon_idx;

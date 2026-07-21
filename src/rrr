@@ -1,6 +1,0 @@
-
-
-gcc10-gcc -g -I${UCVM_INSTALL_PATH}/lib/netcdf/include -I/home/mei/muscal-git/TileDB/opt/tiledb/include -o trilinear_tiledb um_tiledb_g.c -L/home/mei/muscal-git/TileDB/opt/tiledb/lib64 -ltiledb -Wl,-rpath,/home/mei/muscal-git/TileDB/opt/tiledb/lib64 -lm
-
-
-./trilinear_tiledb < iin
