@@ -1,3 +1,17 @@
+/**         
+    read_point.c
+    
+    Usage: ./read_point
+                
+LOOK:           
+    const char* tiledb_array_name = "model_MUSCAL_CANVAS_dll0.01_vardz_float32_cmpd.tiledb";
+
+    // --- Target index coordinates ---
+    int32_t target_dep_idx = 2;
+    int32_t target_lat_idx = 613;
+    int32_t target_lon_idx = 906;
+
+**/     
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -5,7 +19,7 @@
 #include <tiledb/tiledb.h>
 
 int main() {
-    const char* tiledb_array_name = "muscal_canvas.tdb";
+    const char* tiledb_array_name = "model_MUSCAL_CANVAS_dll0.01_vardz_float32_cmpd.tiledb";
 
     // --- Target index coordinates ---
     int32_t target_dep_idx = 2;

@@ -1,3 +1,18 @@
+/**         
+    lookup_nc_point.c
+    
+    Usage: ./lookup_nc_point
+                
+LOOK:
+    const char* nc_filename = "/var/www/html/CVM_DATASET_DIRECTORY/model/muscal/model_MUSCAL_CANVAS_dll0.01_vardz_float32_cmpd.nc";
+
+    // --- Hardcoded geographic inputs for testing ---
+    float input_depth = 45.2f;   // in meters
+    float input_lat   = 34.0025f; // in degrees
+    float input_lon   = -118.241f; // in degrees
+
+**/             
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>

@@ -4,6 +4,12 @@
   -- turn a list of lat-lon-z into a kdtree, 
      flatten the kdtree, 
      and write the flatten kdtree into a binary file
+
+  Usage: ./build_kdtree num-of-points file-of-surface-latlonz flatten-file
+
+NOTE:
+    ./build_kdtree 4 surface.in surface.bin
+
 **/
 
 #include <stdio.h>

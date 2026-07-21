@@ -13,13 +13,8 @@ AM_CFLAGS = ${CFLAGS} ${CPPFLAGS} -I$(prefix)/include -I${UCVM_INSTALL_PATH}/lib
 AM_LDFLAGS = ${LDFLAGS} -L$(prefix)/lib ${LIBS} -L${UCVM_INSTALL_PATH}/lib/tiledb/lib64 -ltiledb -Wl,-rpath,${UCVM_INSTALL_PATH}/lib/tiledb/lib64 -L${UCVM_INSTALL_PATH}/lib/netcdf/lib -lnetcdf -lm
 
 
-TOOL_TARGETS = muscal2_surface build_kdtree query_kdtree
-TARGETS = read_coords read_point lookup_point lookup_nc_point
-
-gcc10-gcc -g -I${UCVM_INSTALL_PATH}/lib/netcdf/include -I/home/mei/muscal-git/TileDB/opt/tiledb/include convert_nc_to_tiledb.c -o convert_nc_to_tiledb -L${UCVM_INSTALL_PATH}/lib/netcdf/lib -lnetcdf -L/home/mei/muscal-git/TileDB/opt/tiledb/lib64 -ltiledb -Wl,-rpath,/home/mei/muscal-git/TileDB/opt/tiledb/lib64
-
-./convert_nc_to_tiledb
-
+TOOL_TARGETS = muscal2_surface build_kdtree query_kdtree read_coords read_point lookup_point lookup_nc_point 
+TARGETS = convert_nc_to_tiledb muscal2_surface
 
 all: $(TARGETS) $(TOOL_TARGETS)
 
@@ -34,6 +29,12 @@ clean:
 
 $(objects): %.o: %.c
 	$(CC) -fPIC -DDYNAMIC_LIBRARY $(AM_CFLAGS) -o $@ -c $^
+
+muscal2_surface.o: muscal2_surface.c
+	$(CC) $(AM_NC_CFLAGS) -o $@ -c $^
+
+muscal2_surface : muscal2_surface.o 
+	$(CC) -o $@ $^ $(AM_NC_LDFLAGS)
 
 convert_nc_to_tiledb.o: convert_nc_to_tiledb.c
 	$(CC) $(AM_CFLAGS) -o $@ -c $^

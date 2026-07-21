@@ -4,6 +4,8 @@
  * @author - SCEC
  * @version 1.0
  *
+ * Usage: ./muscal2_surface [-i layerlist] 
+ *
  * output format:
  * -120.557570 35.100350 0.000000 1410.000000 3170.000000
  *
@@ -19,7 +21,7 @@
 #include "cJSON.h"
 #include "muscal2.h"
 
-int muscal2_debug=1;
+int muscal2_debug=0;
 
 void extract_surface(float dep);
 

@@ -1,3 +1,18 @@
+/**
+    lookup_point.c
+    
+    Usage: ./lookup_point
+ 
+LOOK:
+    const char* tiledb_array_name = "model_MUSCAL_CANVAS_dll0.01_vardz_float32_cmpd.tiledb";
+    
+    // --- Target Inputs ---
+    float input_depth = 45.2f;   // in meters
+    float input_lat   = 34.0025f; // in degrees
+    float input_lon   = -118.241f; // in degrees
+
+**/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>

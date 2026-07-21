@@ -1,10 +1,10 @@
 /**
+   convert_nc_to_tiledb.c
 
-convert_nc_to_tiledb.c
+   Usage: ./convert_nc_to_tiledb nc_file tildb_file
 
-   Usage: 
-
-convert_nc_to_tiledb ...model_MUSCAL_CANVAS_dll0.01_vardz_float32_cmpd.nc model_MUSCAL_CANVAS_dll0.01_vardz_float32_cmpd.tiledb
+nc_file => /var/www/html/CVM_DATASET_DIRECTORY/model/muscal/model_MUSCAL_CANVAS_dll0.01_vardz_float32_cmpd.nc
+tiledb_file => model_MUSCAL_CANVAS_dll0.01_vardz_float32_cmpd.tiledb
 
 **/ 
 

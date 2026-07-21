@@ -2,8 +2,14 @@
   
   query_kdtree.c
   -- convert a set of lat-lon-z into a kdtree, 
-     make nearset point query against the kdtree
+     make nearest point query against the kdtree
 
+  ./query_kdtree 945765 $UCVM_INSTALL_PATH/model/muscal2/data/muscal2/surface_945765.in in
+
+  where in : lon lat depth
+
+         -113.282 35.35 3000
+         ...
 **/
 
 #include <stdio.h>

@@ -1,3 +1,15 @@
+/**         
+    read_coords.c
+    
+    Usage: ./read_coords
+                
+LOOK:           
+    const char* tiledb_array_name = "model_MUSCAL_CANVAS_dll0.01_vardz_float32_cmpd.tiledb";
+
+    output part of data array
+
+**/     
+
 
 #include <stdio.h>
 #include <stdlib.h>

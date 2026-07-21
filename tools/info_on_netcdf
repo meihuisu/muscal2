@@ -25,3 +25,12 @@ variables:
 // global attributes:
 		:_NCProperties = "version=2,netcdf=4.9.2,hdf5=1.14.3" ;
 
+
+
+# model_MUSCAL_CANVAS_dll0.01_vardz_float32_cmpd.nc
+#ncdump -h /var/www/html/CVM_DATASET_DIRECTORY/model/muscal/model_MUSCAL_CANVAS_dll0.01_vardz_float32_cmpd.nc
+#ncdump  -h model_MUSCAL_CANVAS_dll0.01_vardz_float32_cmpd.nc
+#ncdump  -v depth model_MUSCAL_CANVAS_dll0.01_vardz_float32_cmpd.nc
+
+ncks -H -C -v vp -d depth,43 -d latitude,610 -d longitude,903 model_MUSCAL_CANVAS_dll0.01_vardz_float32_cmpd.nc
+
