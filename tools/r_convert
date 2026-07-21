@@ -4,4 +4,6 @@ rm -rf convert_nc_to_tiledb muscal_canvas.tdb
 
 gcc10-gcc -g -I${UCVM_INSTALL_PATH}/lib/netcdf/include -I/home/mei/muscal-git/TileDB/opt/tiledb/include convert_nc_to_tiledb.c -o convert_nc_to_tiledb -L${UCVM_INSTALL_PATH}/lib/netcdf/lib -lnetcdf -L/home/mei/muscal-git/TileDB/opt/tiledb/lib64 -ltiledb -Wl,-rpath,/home/mei/muscal-git/TileDB/opt/tiledb/lib64
 
-./convert_nc_to_tiledb
+./convert_nc_to_tiledb /var/www/html/CVM_DATASET_DIRECTORY/model/muscal/model_MUSCAL_CANVAS_dll0.01_vardz_float32_cmpd.nc model_MUSCAL_CANVAS_dll0.01_vardz_float32_cmpd.tiledb
+
+

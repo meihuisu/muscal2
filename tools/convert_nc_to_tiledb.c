@@ -1,3 +1,13 @@
+/**
+
+convert_nc_to_tiledb.c
+
+   Usage: 
+
+convert_nc_to_tiledb ...model_MUSCAL_CANVAS_dll0.01_vardz_float32_cmpd.nc model_MUSCAL_CANVAS_dll0.01_vardz_float32_cmpd.tiledb
+
+**/ 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <netcdf.h>
@@ -65,9 +75,19 @@ void create_tiledb_array_v230(const char* array_name) {
     tiledb_ctx_free(&ctx);
 }
 
-int main() {
-    const char* nc_filename = "/var/www/html/CVM_DATASET_DIRECTORY/model/muscal/model_MUSCAL_CANVAS_dll0.01_vardz_float32_cmpd.nc";
-    const char* tiledb_array_name = "model_MUSCAL_CANVAS_dll0.01_vardz_float32_cmpd.tiledb";
+//    const char* nc_filename = "/var/www/html/CVM_DATASET_DIRECTORY/model/muscal/model_MUSCAL_CANVAS_dll0.01_vardz_float32_cmpd.nc";
+//    const char* tiledb_array_name = "model_MUSCAL_CANVAS_dll0.01_vardz_float32_cmpd.tiledb";
+
+int main( int argc, char *argv[]) {
+
+    if(argc !=3) {
+        fprintf(stderr," Usage:  convert_nc_to_tiledb nc_datafile tiledb_filename !!\n");
+        return -1;
+    }
+
+    char* nc_filename = argv[1];
+    char* tiledb_array_name = argv[2];
+
     int ncid = -1, vp_id, vs_id, rho_id;
     int depth_var_id, lat_var_id, lon_var_id;
 
